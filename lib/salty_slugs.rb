@@ -70,3 +70,21 @@ module Norbauer
     end
   end
 end
+
+# This sets find to automatically use slugs if they're installed
+class ActiveRecord::Base
+  class << self
+    alias_method :find_without_slug, :find
+    def find(*args)
+      slug = args[0]
+      options = args[1]
+      if self.respond_to?('slug_column') and slug.to_i == 0
+        with_scope(:find => { :conditions => { slug_column => slug } }) do
+          find_without_slug(:first, options)
+        end or raise ::ActiveRecord::RecordNotFound
+      else
+        find_without_slug(*args)
+      end
+    end
+  end 
+end
